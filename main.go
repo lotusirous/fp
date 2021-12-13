@@ -78,11 +78,6 @@ func usage() {
 	os.Exit(2)
 }
 
-func exit(w io.Writer, a ...interface{}) {
-	fmt.Fprintln(w, a...)
-	os.Exit(1)
-}
-
 var (
 	verbose = flag.Bool("v", false, `print the file hash in (md5, sha1, sha256)`)
 )
@@ -99,7 +94,8 @@ func main() {
 
 	abs, fi, err := ReadFileInfo(path)
 	if err != nil {
-		exit(fd, "Cannot resolve the path: ", err)
+		fmt.Fprintln(fd, "Cannot resolve the path: ", err)
+		os.Exit(1)
 	}
 
 	fmt.Fprintf(fd, "PATH: %s\n", abs)

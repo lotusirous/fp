@@ -121,7 +121,7 @@ func main() {
 			fmt.Fprintf(fd, "Cannot digest group: %v", err)
 			os.Exit(1)
 		}
-		// sort by key since the go map is unordered
+		// sort by key since the map is unordered
 		keys := make([]string, 0, len(g))
 		for k := range hashes {
 			keys = append(keys, k)

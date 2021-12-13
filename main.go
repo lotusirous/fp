@@ -36,8 +36,8 @@ func (h HashGroup) Writer() io.Writer {
 	return io.MultiWriter(fns...)
 }
 
-// MultiDigest hashes a file for a given path
-func MultiDigest(loc string, group HashGroup) (map[string]string, error) {
+// DigestGroup hashes a file for a given path
+func DigestGroup(loc string, group HashGroup) (map[string]string, error) {
 	w := group.Writer()
 	file, err := os.Open(loc)
 	if err != nil {
@@ -109,20 +109,20 @@ func main() {
 		os.Exit(0)
 	}
 
-	hashFuncs := HashGroup{
+	g := HashGroup{
 		"MD5":    md5.New(),
 		"SHA1":   sha1.New(),
 		"SHA256": sha256.New(),
 	}
 
 	if *verbose {
-		hashes, err := MultiDigest(abs, hashFuncs)
+		hashes, err := DigestGroup(abs, g)
 		if err != nil {
-			fmt.Fprintf(fd, "Cannot digest: %v", err)
+			fmt.Fprintf(fd, "Cannot digest group: %v", err)
 			os.Exit(1)
 		}
 		// sort by key since the go map is unordered
-		keys := make([]string, 0, len(hashes))
+		keys := make([]string, 0, len(g))
 		for k := range hashes {
 			keys = append(keys, k)
 		}

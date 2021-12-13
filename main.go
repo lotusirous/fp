@@ -12,11 +12,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 // HashGroup composes the name to hash hash function
 type HashGroup map[string]hash.Hash
 
+// Values extracts the values from group hash.
 func (h HashGroup) Values() map[string]string {
 	out := make(map[string]string)
 	for name, v := range h {
@@ -119,8 +121,15 @@ func main() {
 			fmt.Fprintf(fd, "Cannot digest: %v", err)
 			os.Exit(1)
 		}
-		for name, v := range hashes {
-			fmt.Fprintf(fd, "%s: %s\n", name, v)
+		// sort by key since the go map is unordered
+		keys := make([]string, 0, len(hashes))
+		for k := range hashes {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		for _, name := range keys {
+			fmt.Fprintf(fd, "%s: %s\n", name, hashes[name])
 		}
 	}
 

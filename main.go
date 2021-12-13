@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"flag"
 	"fmt"
 	"hash"
@@ -64,9 +63,7 @@ func ReadFileInfo(path string) (string, os.FileInfo, error) {
 		return "", nil, err
 	}
 	fi, err := os.Stat(linkAbs)
-	if errors.Is(err, os.ErrNotExist) {
-		return "", nil, err
-	} else if err != nil {
+	if err != nil {
 		return "", nil, err
 	}
 

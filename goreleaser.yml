@@ -1,0 +1,12 @@
+env:
+  - GO111MODULE=on
+before:
+  hooks:
+    - go mod download
+    - go mod tidy
+builds:
+- env:
+    - CGO_ENABLED=0
+  goos: [darwin, linux]
+  goarch: [386, arm, amd64, arm64]
+  mod_timestamp: '{{ .CommitTimestamp }}'

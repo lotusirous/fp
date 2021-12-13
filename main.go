@@ -14,20 +14,41 @@ import (
 	"path/filepath"
 )
 
-// Digest hashes a file for a given path
-func Digest(h hash.Hash, loc string) (string, error) {
+// HashGroup composes the name to hash hash function
+type HashGroup map[string]hash.Hash
+
+func (h HashGroup) Values() map[string]string {
+	out := make(map[string]string)
+	for name, v := range h {
+		out[name] = hex.EncodeToString(v.Sum(nil))
+	}
+	return out
+}
+
+// Writer composes the writer in the group to hash
+func (h HashGroup) Writer() io.Writer {
+	var fns []io.Writer
+	for _, fn := range h {
+		fns = append(fns, fn)
+	}
+	return io.MultiWriter(fns...)
+}
+
+// MultiDigest hashes a file for a given path
+func MultiDigest(loc string, group HashGroup) (map[string]string, error) {
+	w := group.Writer()
 	file, err := os.Open(loc)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer file.Close()
 
 	buf := make([]byte, 1024)
-	if _, err := io.CopyBuffer(h, file, buf); err != nil {
-		return "", err
+	if _, err := io.CopyBuffer(w, file, buf); err != nil {
+		return nil, err
 	}
 
-	return hex.EncodeToString(h.Sum(nil)), nil
+	return group.Values(), nil
 }
 
 // ReadFileInfo gets the abs path and follows the link
@@ -86,19 +107,20 @@ func main() {
 		os.Exit(0)
 	}
 
+	hashFuncs := HashGroup{
+		"MD5":    md5.New(),
+		"SHA1":   sha1.New(),
+		"SHA256": sha256.New(),
+	}
+
 	if *verbose {
-		hashes := map[string]hash.Hash{
-			"MD5":    md5.New(),
-			"SHA1":   sha1.New(),
-			"SHA256": sha256.New(),
+		hashes, err := MultiDigest(abs, hashFuncs)
+		if err != nil {
+			fmt.Fprintf(fd, "Cannot digest: %v", err)
+			os.Exit(1)
 		}
-		for name, hf := range hashes {
-			if v, err := Digest(hf, abs); err != nil {
-				fmt.Fprintf(fd, "Cannot digest %s: %v", name, err)
-				os.Exit(1)
-			} else {
-				fmt.Fprintf(fd, "%s: %s\n", name, v)
-			}
+		for name, v := range hashes {
+			fmt.Fprintf(fd, "%s: %s\n", name, v)
 		}
 	}
 

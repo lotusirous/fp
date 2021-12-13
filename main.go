@@ -14,30 +14,14 @@ import (
 	"sort"
 )
 
-// HashGroup composes the name to hash hash function
-type HashGroup map[string]hash.Hash
-
-// Values extracts the values from group hash.
-func (h HashGroup) Values() map[string]string {
-	out := make(map[string]string)
-	for name, v := range h {
-		out[name] = hex.EncodeToString(v.Sum(nil))
-	}
-	return out
-}
-
-// Writer composes the writer in the group to hash
-func (h HashGroup) Writer() io.Writer {
+// DigestGroup hashes a file for a given path
+func DigestGroup(hg map[string]hash.Hash, loc string) (map[string]string, error) {
 	var fns []io.Writer
-	for _, fn := range h {
+	for _, fn := range hg {
 		fns = append(fns, fn)
 	}
-	return io.MultiWriter(fns...)
-}
+	w := io.MultiWriter(fns...)
 
-// DigestGroup hashes a file for a given path
-func DigestGroup(loc string, group HashGroup) (map[string]string, error) {
-	w := group.Writer()
 	file, err := os.Open(loc)
 	if err != nil {
 		return nil, err
@@ -49,7 +33,24 @@ func DigestGroup(loc string, group HashGroup) (map[string]string, error) {
 		return nil, err
 	}
 
-	return group.Values(), nil
+	out := make(map[string]string)
+	for name, v := range hg {
+		out[name] = hex.EncodeToString(v.Sum(nil))
+	}
+
+	return out, nil
+}
+
+func writeTo(values map[string]string, w io.Writer) {
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, name := range keys {
+		fmt.Fprintf(w, "%s: %s\n", name, values[name])
+	}
 }
 
 // ReadFileInfo gets the abs path and follows the link
@@ -58,16 +59,16 @@ func ReadFileInfo(path string) (string, os.FileInfo, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	linkAbs, err := filepath.EvalSymlinks(abs)
+	origin, err := filepath.EvalSymlinks(abs)
 	if err != nil {
 		return "", nil, err
 	}
-	fi, err := os.Stat(linkAbs)
+	fi, err := os.Stat(origin)
 	if err != nil {
 		return "", nil, err
 	}
 
-	return linkAbs, fi, nil
+	return origin, fi, nil
 }
 
 func usage() {
@@ -102,32 +103,18 @@ func main() {
 	}
 
 	fmt.Fprintf(fd, "PATH: %s\n", abs)
-	if fi.IsDir() {
-		os.Exit(0)
-	}
+	if *verbose && !fi.IsDir() {
+		hg := make(map[string]hash.Hash)
+		hg["MD5"] = md5.New()
+		hg["SHA1"] = sha1.New()
+		hg["SHA256"] = sha256.New()
 
-	g := HashGroup{
-		"MD5":    md5.New(),
-		"SHA1":   sha1.New(),
-		"SHA256": sha256.New(),
-	}
-
-	if *verbose {
-		hashes, err := DigestGroup(abs, g)
+		values, err := DigestGroup(hg, abs)
 		if err != nil {
 			fmt.Fprintf(fd, "Cannot digest group: %v", err)
 			os.Exit(1)
 		}
-		// sort by key since the map is unordered
-		keys := make([]string, 0, len(g))
-		for k := range hashes {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-
-		for _, name := range keys {
-			fmt.Fprintf(fd, "%s: %s\n", name, hashes[name])
-		}
+		writeTo(values, fd)
 	}
 
 }

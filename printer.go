@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 )
 
 // RowRenderer render the row to a file descriptor.
@@ -50,6 +51,6 @@ func (p *pw) AddRowMap(values map[string]string) {
 // Render the rows to output
 func (p *pw) Render() {
 	for _, l := range p.rows {
-		fmt.Fprintf(p.w, "%s: %s\n", l[0], l[1])
+		fmt.Fprintf(p.w, "%s: %s\n", strings.ToUpper(l[0]), l[1])
 	}
 }

@@ -12,7 +12,7 @@ func TestRowPrinter(t *testing.T) {
 	pw.Render()
 
 	got := buf.String()
-	want := "foo: bar\n"
+	want := "FOO: bar\n"
 
 	if got != want {
 		t.Errorf("Got: %s - want: %s", buf, want)

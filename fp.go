@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 )
 
 // DigestGroup hashes a file for a given path
@@ -39,18 +38,6 @@ func DigestGroup(hg map[string]hash.Hash, loc string) (map[string]string, error)
 	}
 
 	return out, nil
-}
-
-func writeTo(values map[string]string, w io.Writer) {
-	keys := make([]string, 0, len(values))
-	for k := range values {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	for _, name := range keys {
-		fmt.Fprintf(w, "%s: %s\n", name, values[name])
-	}
 }
 
 // ReadFileInfo gets the abs path and follows the link
@@ -98,7 +85,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(fd, "PATH: %s\n", abs)
+	rr := NewRowRender(os.Stdout)
+	if fi.IsDir() {
+		rr.AddRow("DIR", abs)
+	} else {
+		rr.AddRow("PATH", abs)
+	}
+
 	if *verbose && !fi.IsDir() {
 		hg := make(map[string]hash.Hash)
 		hg["MD5"] = md5.New()
@@ -110,7 +103,8 @@ func main() {
 			fmt.Fprintf(fd, "Cannot digest group: %v", err)
 			os.Exit(1)
 		}
-		writeTo(values, fd)
+		rr.AddRowMap(values)
 	}
 
+	rr.Render()
 }

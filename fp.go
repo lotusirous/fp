@@ -40,6 +40,21 @@ func DigestGroup(hg map[string]hash.Hash, loc string) (map[string]string, error)
 	return out, nil
 }
 
+// ByteCountSI counts and convert to human readable format.
+func ByteCountSI(b int64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
+}
+
 // ReadFileInfo gets the abs path and follows the link
 func ReadFileInfo(path string) (string, os.FileInfo, error) {
 	abs, err := filepath.Abs(path)
@@ -89,7 +104,8 @@ func main() {
 	if fi.IsDir() {
 		rr.AddRow("DIR", abs)
 	} else {
-		rr.AddRow("PATH", abs)
+		rr.AddRow("FILE", abs)
+		rr.AddRow("SIZE", ByteCountSI(fi.Size()))
 	}
 
 	if *verbose && !fi.IsDir() {

@@ -13,8 +13,8 @@ type RowRenderer interface {
 	AddRow(field, value string)
 	// AddRowMap appends the row by map input.
 	AddRowMap(values map[string]string)
-	// Render the rows.
-	Render()
+	// RenderTo the rows.
+	RenderTo(w io.Writer)
 }
 
 // NewRowRender creates the printer.
@@ -49,7 +49,7 @@ func (p *pw) AddRowMap(values map[string]string) {
 }
 
 // Render the rows to output
-func (p *pw) Render() {
+func (p *pw) RenderTo(w io.Writer) {
 	for _, l := range p.rows {
 		fmt.Fprintf(p.w, "%s: %s\n", strings.ToUpper(l[0]), l[1])
 	}

@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/atotto/clipboard"
 )
@@ -72,9 +73,8 @@ func main() {
 	}
 
 	rr := NewRowRender()
-	rr.AddRow("", abs)
 
-	if *flagVerbose && !fi.IsDir() {
+	if *flagVerbose {
 		if fi.IsDir() {
 			rr.AddRow("DIR", abs)
 		} else {
@@ -92,12 +92,16 @@ func main() {
 		}
 		rr.AddRowMap(values)
 		rr.Write(os.Stdout)
+		return
 	}
+	rr.AddRow("", abs)
 
 	if *flagClip {
 		buf := new(bytes.Buffer)
 		rr.Write(buf)
-		clipboard.WriteAll(buf.String())
+		line := buf.String()
+		clipboard.WriteAll(strings.TrimSuffix(line, "\n"))
 		return
 	}
+	rr.Write(os.Stdout)
 }

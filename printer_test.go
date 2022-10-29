@@ -7,9 +7,9 @@ import (
 
 func TestRowPrinter(t *testing.T) {
 	buf := new(bytes.Buffer)
-	pw := &pw{buf, make([][]string, 0)}
+	pw := &pw{make([]row, 0)}
 	pw.AddRow("FILE", "bar")
-	pw.RenderTo(buf)
+	pw.Write(buf)
 
 	got := buf.String()
 	want := "FILE: bar\n"

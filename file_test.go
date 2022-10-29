@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
 func TestByteCountSI(t *testing.T) {
 	t.Parallel()
@@ -31,5 +34,17 @@ func TestByteCountSI(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestReadFileInfo(t *testing.T) {
+	testFile := "file.go"
+	abs, _, err := ReadFileInfo(testFile)
+	if err != nil {
+		t.Fatalf("cannot read file info: %v", err)
+	}
+
+	want, _ := filepath.Abs(testFile)
+	if abs != want {
+		t.Fatalf("invalid abs file, want: %v - got: %v", want, abs)
+	}
 }

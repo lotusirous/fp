@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -11,6 +12,8 @@ import (
 	"io"
 	"log"
 	"os"
+
+	"github.com/atotto/clipboard"
 )
 
 // DigestGroup hashes a file for a given path
@@ -49,7 +52,7 @@ func usage() {
 
 var (
 	flagVerbose = flag.Bool("v", false, `print the file hash in (md5, sha1, sha256)`)
-	flagClip    = flag.Bool("clip", false, "copy the path to the clipboard")
+	flagClip    = flag.Bool("c", false, "copy the path to the clipboard")
 )
 
 func main() {
@@ -68,14 +71,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	rr := NewRowRender(os.Stdout)
-	if fi.IsDir() {
-		rr.AddRow("DIR", abs)
-	} else {
-		rr.AddRow("FILE", abs)
-	}
+	rr := NewRowRender()
+	rr.AddRow("", abs)
 
 	if *flagVerbose && !fi.IsDir() {
+		if fi.IsDir() {
+			rr.AddRow("DIR", abs)
+		} else {
+			rr.AddRow("FILE", abs)
+		}
 		rr.AddRow("SIZE", ByteCountSI(fi.Size()))
 		hg := make(map[string]hash.Hash)
 		hg["MD5"] = md5.New()
@@ -87,7 +91,13 @@ func main() {
 			log.Fatal("unable to digest group: ", err)
 		}
 		rr.AddRowMap(values)
+		rr.Write(os.Stdout)
 	}
 
-	rr.RenderTo(os.Stdout)
+	if *flagClip {
+		buf := new(bytes.Buffer)
+		rr.Write(buf)
+		clipboard.WriteAll(buf.String())
+		return
+	}
 }

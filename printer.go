@@ -13,23 +13,26 @@ type RowRenderer interface {
 	AddRow(field, value string)
 	// AddRowMap appends the row by map input.
 	AddRowMap(values map[string]string)
-	// RenderTo the rows.
-	RenderTo(w io.Writer)
+	// Write the rows.
+	Write(w io.Writer) (n int, err error)
 }
 
 // NewRowRender creates the printer.
-func NewRowRender(w io.Writer) RowRenderer {
-	return &pw{w, make([][]string, 0)}
+func NewRowRender() RowRenderer {
+	return &pw{make([]row, 0)}
 }
 
+type row struct {
+	header string
+	value  string
+}
 type pw struct {
-	w    io.Writer
-	rows [][]string
+	rows []row
 }
 
 // AddRow adds a row to writer.
 func (p *pw) AddRow(field, value string) {
-	r := []string{field, value}
+	r := row{header: field, value: value}
 	p.rows = append(p.rows, r)
 }
 
@@ -42,15 +45,19 @@ func (p *pw) AddRowMap(values map[string]string) {
 	sort.Strings(keys)
 
 	for _, name := range keys {
-		r := []string{name, values[name]}
+		r := row{header: name, value: values[name]}
 		p.rows = append(p.rows, r)
 	}
-
 }
 
 // Render the rows to output
-func (p *pw) RenderTo(w io.Writer) {
-	for _, l := range p.rows {
-		fmt.Fprintf(p.w, "%s: %s\n", strings.ToUpper(l[0]), l[1])
+func (p *pw) Write(w io.Writer) (int, error) {
+	for _, row := range p.rows {
+		if row.header == "" {
+			fmt.Fprintf(w, "%s\n", row.value)
+		} else {
+			fmt.Fprintf(w, "%s: %s\n", strings.ToUpper(row.header), row.value)
+		}
 	}
+	return 0, nil
 }

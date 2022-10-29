@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"log"
 	"os"
 )
 
@@ -47,23 +48,24 @@ func usage() {
 }
 
 var (
-	verbose = flag.Bool("v", false, `print the file hash in (md5, sha1, sha256)`)
+	flagVerbose = flag.Bool("v", false, `print the file hash in (md5, sha1, sha256)`)
+	flagClip    = flag.Bool("clip", false, "copy the path to the clipboard")
 )
 
 func main() {
+	log.SetPrefix("fp: ")
+	log.SetFlags(0)
 	flag.Usage = usage
 	flag.Parse()
 	if flag.NArg() == 0 {
 		flag.Usage()
 	}
 
-	fd := os.Stdout // default writer
 	path := flag.Arg(0)
 
 	abs, fi, err := ReadFileInfo(path)
 	if err != nil {
-		fmt.Fprintln(fd, "Cannot resolve the path: ", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	rr := NewRowRender(os.Stdout)
@@ -71,10 +73,10 @@ func main() {
 		rr.AddRow("DIR", abs)
 	} else {
 		rr.AddRow("FILE", abs)
-		rr.AddRow("SIZE", ByteCountSI(fi.Size()))
 	}
 
-	if *verbose && !fi.IsDir() {
+	if *flagVerbose && !fi.IsDir() {
+		rr.AddRow("SIZE", ByteCountSI(fi.Size()))
 		hg := make(map[string]hash.Hash)
 		hg["MD5"] = md5.New()
 		hg["SHA1"] = sha1.New()
@@ -82,11 +84,10 @@ func main() {
 
 		values, err := DigestGroup(hg, abs)
 		if err != nil {
-			fmt.Fprintf(fd, "Cannot digest group: %v", err)
-			os.Exit(1)
+			log.Fatal("unable to digest group: ", err)
 		}
 		rr.AddRowMap(values)
 	}
 
-	rr.Render()
+	rr.RenderTo(os.Stdout)
 }

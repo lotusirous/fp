@@ -45,15 +45,16 @@ func DigestGroup(hg map[string]hash.Hash, loc string) (map[string]string, error)
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "usage: fp [file or directory]\n")
-	fmt.Fprintf(os.Stderr, "Flags:\n")
+	fmt.Fprintf(os.Stderr, "Usage: fp [file or directory]\n")
+	fmt.Fprintf(os.Stderr, "\nThis command allows you to view information about a specified file or directory.\n")
+	fmt.Fprintf(os.Stderr, "\nFlags:\n")
 	flag.PrintDefaults()
 	os.Exit(2)
 }
 
 var (
-	flagVerbose = flag.Bool("v", false, `print the file hash in (md5, sha1, sha256)`)
-	flagClip    = flag.Bool("c", false, "copy the path to the clipboard")
+	flagVerbose = flag.Bool("d", false, `Print detailed file hash information, including the md5, sha1, and sha256 hashes`)
+	flagClip    = flag.Bool("c", false, "Copy the path to the clipboard")
 )
 
 func main() {

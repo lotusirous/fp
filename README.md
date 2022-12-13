@@ -4,8 +4,11 @@ A filepath utility
 
 ```
 $ fp
-usage: fp [file or directory]
+Usage: fp [file or directory]
+
+This command allows you to view information about a specified file or directory.
+
 Flags:
-  -c	copy the path to the clipboard
-  -v	print the file hash in (md5, sha1, sha256)
+  -c	Copy the path to the clipboard
+  -d	Print detailed file hash information, including the md5, sha1, and sha256 hashes
 ```
